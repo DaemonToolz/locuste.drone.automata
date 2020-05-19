@@ -1,4 +1,4 @@
-# locuste.drone.automata
+# Automate PyDrone : locuste.drone.automata
 LOCUSTE : Automate Pyrhon connectée aux drones ANAFI / PARROT par le biais de la SDK OLYMPE Python (Raspberry PI)
 Requiert une version installée de PARROT OLYMPE avec les commandes suivantes : 
 source PATH/parrot-groundsdk/products/olympe/linux/env/shell
