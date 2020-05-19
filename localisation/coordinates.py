@@ -1,9 +1,9 @@
 # Coordinates Classe des coordonées partagées avec la partie GO
 class Coordinates(object):
     def __init__(self, lat=None, long=None, alt=None, orientation=None):
-        self.UpdatePosition(lat,long,alt, orientation)
+        self.update_position(lat,long,alt, orientation)
     
-    def UpdatePosition(self, lat, long, alt, orientation=None):
+    def update_position(self, lat, long, alt, orientation=None):
         if long is not None:
             self.longitude = long
         if lat  is not None:

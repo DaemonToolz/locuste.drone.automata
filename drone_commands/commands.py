@@ -24,7 +24,7 @@ class DroneActionStatus(Enum):
     IDLE = 0
     ON_ACTION = 1
 
-def enumFromValue (enum, name):
+def enum_from_value (enum, name):
     value = enum[name].value
     return value
 
@@ -32,18 +32,20 @@ def enumFromValue (enum, name):
 # DroneCommandParams Objet passé en paramètre par le service locust.service.brain
 class DroneCommandParams(object):
     def __init__(self, **kwargs):
+        """ DroneCommandParams : Paramètre à transférer au drone par l'unité de contrôle """
         self.__dict__.update(kwargs)
 
-    def ToString(self):
+    def to_string(self):
         return str(self.__dict__)
 
 # DroneCommand Commande passée à l'automate
 class DroneCommand(object):
     def __init__(self, name, params=None, command_type = CommandType.AUTOMATIC):
+        """ DroneCommand : Composant à transférer à la fonction cible"""
         self.name = name
         self.params = params
         self.command_type = command_type
-    def ToString(self):
+    def to_string(self):
         return str(self.__dict__)
 
 class CommandAbordException(Exception):

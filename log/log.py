@@ -7,6 +7,7 @@ Path("/home/pi/project/locuste/logs/olympe").mkdir(parents=True, exist_ok=True)
 Path("/home/pi/project/locuste/stream").mkdir(parents=True, exist_ok=True)
 
 
+global_format = "%(asctime)s [%(levelname)s] %(name)s - %(funcName)s - %(message)s"
 logger = None
 drone_log = {}
 
@@ -16,7 +17,7 @@ def init_logs():
     global logger
     logger = logging.getLogger('locust-agent')
     hdlr = logging.FileHandler('/home/pi/project/locuste/logs/locust-agent-controller.log')
-    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s - %(funcName)s - %(message)s")
+    formatter = logging.Formatter(global_format)
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr) 
     logger.setLevel(logging.INFO)
@@ -24,13 +25,13 @@ def init_logs():
 
 def init_logs_for(ip_address):
     global drone_log 
-    myLogger = logging.getLogger("locust-agent-{}".format(ip_address))
+    my_logger = logging.getLogger("locust-agent-{}".format(ip_address))
     hdlr = logging.FileHandler('/home/pi/project/locuste/logs/swarm/locust-agent-{}.log'.format(ip_address))
-    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s - %(funcName)s - %(message)s")
+    formatter = logging.Formatter(global_format)
     hdlr.setFormatter(formatter)
-    myLogger.addHandler(hdlr) 
-    myLogger.setLevel(logging.INFO)
-    drone_log[ip_address] = myLogger
+    my_logger.addHandler(hdlr) 
+    my_logger.setLevel(logging.INFO)
+    drone_log[ip_address] = my_logger
 
 import json
 def init_olympe_logs():

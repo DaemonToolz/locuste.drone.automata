@@ -3,6 +3,7 @@ from threading import Timer
 # RepeatedTimer Classe pour générer un "Tick" à intervalle régulier
 class RepeatedTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
+        """ RepeatedTimer : Classe qui déclenche un action à intervalle régulier """
         self._timer     = None
         self.interval   = interval
         self.function   = function

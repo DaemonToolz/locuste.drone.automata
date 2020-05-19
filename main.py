@@ -3,7 +3,6 @@
 # Prévoir : export LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libatomic.so.1
 import sys
 # insert at 1, 0 is the script path (or '' in REPL)
-import listeners
 import time;
 import log.log
 import _thread
@@ -26,15 +25,7 @@ all_drones = {}
 def associate_drone(data):
     global all_drones
     all_drones[data["ip_address"]] = drone.PyDrone( data["ip_address"],configurations.drone_config["drone_altitude"] )
-    test_drone = all_drones[data["ip_address"]];
 
-    # Prepare a new Simulation sequence
-    #test_drone.EnterTestingMode()
-    #test_drone.SendCommand(drone.DroneCommand(name=drone.PublicCommands.TAKE_OFF, command_type=drone.CommandType.COMMON))
-    #test_drone.SendCommand(drone.DroneCommand(name=drone.PublicCommands.GOTO, params=drone.DroneCommandParams(latitude=0.0, longitude=0.0), command_type=drone.CommandType.COMMON))
-    #test_drone.SendCommand(drone.DroneCommand(name=drone.PublicCommands.MOVE, params=drone.DroneCommandParams(x=0,y=0,z=0,orientation=10), command_type=drone.CommandType.MANUAL))
-    #test_drone.SendCommand(drone.DroneCommand(name=drone.PublicCommands.MOVE, params=drone.DroneCommandParams(x=10,y=0,z=0,orientation=0), command_type=drone.CommandType.MANUAL))
-    #test_drone.LeaveTestingMode() 
 
 try :
     for drone_data in configurations.drone_config["drones"]:
