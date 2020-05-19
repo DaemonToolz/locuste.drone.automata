@@ -1,6 +1,18 @@
 # locuste.drone.automata
 LOCUSTE : Automate Pyrhon connectée aux drones ANAFI / PARROT par le biais de la SDK OLYMPE Python (Raspberry PI)
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/28b77886b9ad485d8c3b261a48dc2af3)](https://www.codacy.com/manual/axel.maciejewski/locuste.drone.automata?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DaemonToolz/locuste.drone.automata&amp;utm_campaign=Badge_Grade)
+
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=alert_status)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=security_rating)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=bugs)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=coverage)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
+
+
 
 Le project Locuste se divise en 3 grandes sections : 
 * Automate (Drone Automata) PYTHON
