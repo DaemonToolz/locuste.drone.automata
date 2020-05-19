@@ -18,11 +18,11 @@ export LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libatomic.so.1 (Si ARM)
 
 
 
-Le project Locuste se divise en 3 grandes sections : 
-* Automate (Drone Automata) PYTHON
-* Unité de contrôle (Brain) GOLANG
-* Unité de planification de vol / Ordonanceur (Scheduler) GOLANG
-* Interface graphique (UI) ANGULAR
+Le project Locuste se divise en 4 grandes sections : 
+* Automate (Drone Automata) PYTHON (https://github.com/DaemonToolz/locuste.drone.automata)
+* Unité de contrôle (Brain) GOLANG (https://github.com/DaemonToolz/locuste.service.brain)
+* Unité de planification de vol / Ordonanceur (Scheduler) GOLANG (https://github.com/DaemonToolz/locuste.service.osm)
+* Interface graphique (UI) ANGULAR (https://github.com/DaemonToolz/locuste.dashboard.ui)
 
 
 ![Composants](https://user-images.githubusercontent.com/6602774/82243830-8960ca80-9940-11ea-917e-15585f178c6d.png)
