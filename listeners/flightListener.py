@@ -44,10 +44,13 @@ class FlightListener(olympe.EventListener):
 
     @olympe.listen_event(FlyingStateChanged() | AlertStateChanged() | NavigateHomeStateChanged())
     def on_state_changed(self, event, scheduler):
-        if hasattr(self, "my_log"):
-            self.my_log.info("{} = {}".format(event.message.name, event.args["state"]))
-        self.on_internal_status_changed(event.message.name, event.args["state"])
-                        
+        try :
+            if hasattr(self, "my_log"):
+                self.my_log.info("{} = {}".format(event.message.name, event.args["state"]))
+            self.on_internal_status_changed(event.message.name, event.args["state"])
+        except :
+            pass;      
+
     @olympe.listen_event(PositionChanged() | moveToChanged())
     def on_position_changed(self, event, scheduler):
         if hasattr(self, "my_log"):

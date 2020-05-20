@@ -288,15 +288,18 @@ class PyDrone(object):
             target = getattr(self, name)
             try :
 
-                self.my_log.info("Commande {} reçue, tentative de traitement".format(name, self._failure_count))
+                self.my_log.info("Commande {} reçue, tentative de traitement".format(name))
                 if self.on_error or not self.error_queue.empty(): # pour éviter de bypasser les autres appels
+                    self.my_log.info("Queue {} en erreur, on enregistre l'information dans la file d'erreur".format(name))
                     self.error_queue.put({"function": target, "params": params})
                 else : 
+                    self.my_log.info("Envoi de la commande pour {}".format(name))
                     if params is not None:
                         target(params);
                     else :
                         target()
                     self._failure_count = 0
+                    self.my_log.info("Commande {} traitée".format(name))
             except(Exception) as error: 
                 self._failure_count += 1
                 self.my_log.warning("Commande {} non reçue, tentative #{}".format(name, self._failure_count))
