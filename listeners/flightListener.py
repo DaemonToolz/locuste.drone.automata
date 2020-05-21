@@ -42,14 +42,27 @@ class FlightListener(olympe.EventListener):
         self._on_signal_lost = func;
 
 
-    @olympe.listen_event(FlyingStateChanged() | AlertStateChanged() | NavigateHomeStateChanged())
+    @olympe.listen_event(NavigateHomeStateChanged())
+    def on_navigation_changed(self, event, scheduler):
+        try :
+            if hasattr(self, "my_log"):
+                self.my_log.info("{} = {}".format(event.message.name, event.args["state"]))
+            # TODO : Implémenter la logique du OnNavigateHome
+        except(Exception) as err :
+            if hasattr(self, "my_log"):
+                self.my_log.info(err)
+           
+
+    @olympe.listen_event(FlyingStateChanged() | AlertStateChanged() )
     def on_state_changed(self, event, scheduler):
         try :
             if hasattr(self, "my_log"):
                 self.my_log.info("{} = {}".format(event.message.name, event.args["state"]))
             self.on_internal_status_changed(event.message.name, event.args["state"])
-        except :
-            pass;      
+        except(Exception) as err :
+            if hasattr(self, "my_log"):
+                self.my_log.info(err)
+             
 
     @olympe.listen_event(PositionChanged() | moveToChanged())
     def on_position_changed(self, event, scheduler):

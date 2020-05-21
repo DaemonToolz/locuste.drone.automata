@@ -62,10 +62,8 @@ from listeners.flightListener import FlightListener
 class PyDrone(object):
     #region Gestionnaire de drone
     def __init__(self, ip_adress, min_height):
-        """
-            PyDrone encapsule le FlightListener et le OLYMPE.Drone
-            Gère l'intégralité des états et des connexions vers l'unité de contrôle
-        """
+        """PyDrone encapsule le FlightListener et le OLYMPE.Drone
+            Gère l'intégralité des états et des connexions vers l'unité de contrôle"""
         global drone_global_commands
 
         log.log.init_logs_for(ip_adress)
@@ -99,6 +97,7 @@ class PyDrone(object):
             self._retry_init = RepeatedTimer(1, self.__initialize)
 
     def __init_variables(self): 
+        """Initialisation d'une partie des variables d'instance"""
         self._retry_init = None
         self._reconnect_timer = None;
         self._online_output = None
@@ -110,6 +109,7 @@ class PyDrone(object):
         self._max_retry = 5
 
     def __initialize(self):
+        """Etape 1 : On initialise le drone et les variables associées"""
         try : 
             self.my_log.info("Tentative de création de la connexion au drone {}".format(self._my_ip))
             self._drone = olympe.Drone(self._my_ip, media_autoconnect=False)
@@ -134,6 +134,7 @@ class PyDrone(object):
         self.update_status();
 
     def __reconnect(self):
+        """Etape 2 : On se connecte au drone et on initialise les variables associées"""
         try :
             self.my_log.info("Tentative de connexion au drone {}".format(self._my_ip))
             
@@ -157,6 +158,7 @@ class PyDrone(object):
         self.update_status();
    
     def __init_listener(self):
+        """Création de l'écouteur d'événement pour remonter les informations envoyées par le drone"""
         try : 
             self._flight_listener = FlightListener(self._drone) 
             self._flight_listener.set_logger(self.my_log)
@@ -172,8 +174,9 @@ class PyDrone(object):
             self.my_log.error(error)
 
     def __init_socket_streaming(self):
-
+        """Etape 3 : Initialisation des Web Sockets"""
         try :
+            # TODO : Scinder en 2 sockets distinctes : 1 pour le contrôle et 1 pour la remontée d'informations
             self._brain_client = socketio.Client() 
            
             self._brain_client.on('connect', self.connect)
@@ -205,26 +208,31 @@ class PyDrone(object):
 
 
     def EnterTestingMode(self, data):
+        """"Activation du mode Test / Simulation"""
         self.my_log.warning("Activation du mode test / simulation")
         self._on_test = True;
         self.update_status()
         
     def LeaveTestingMode(self, data):
+        """Désactivation du mode Test / Simulation"""
         self._on_test = False;
         self.my_log.warning("Fin du mode test / simulation")
         self.update_status()
         
     def RequestManualFlight(self, data):
+        """Passage en mode manuel"""
         self._manual_unit = True;
         self.my_log.warning("Passage en mode vol Manuel")
         self.update_status()
         
     def OnNewOperator(self, data):
+        """Enregistrement d'un nouvel opérateur"""
         self._brain_client.emit('acknowledge', {"name":self.my_name}) # Deux étapes : d'abord un acknowledge suivi de la position actuelle
         if self._connected and self._initialized:
             self._brain_client.emit('position_update', {"id":self.my_name, "position": self._drone.get_state(PositionChanged)})            
 
     def RequestAutomaticFlight(self, data):
+        """Passage en mode automatique"""
         self.my_log.warning("Passage en mode vol Automatique")
         self._manual_unit = False;
         if self._connected and self._initialized:
@@ -232,6 +240,7 @@ class PyDrone(object):
         self.update_status()
 
     def RequestEmergencyDisconnect(self, data): 
+        """Déconnexion de l'automate au drone - utilisé si on perd la connexion ou si on souhaite reprendre la main à partir de PARROT 6"""
         self.my_log.warning("Déconnexion de l'automate")
         if self._connected and self._initialized: 
             self._flight_listener.unsubscribe()
@@ -240,6 +249,7 @@ class PyDrone(object):
             self.update_status()
 
     def RequestEmergencyReconnect(self, data):
+        """Reconnexion de l'automate au drone"""
         self.my_log.warning("Reconnexion à l'automate")
         if not self._connected and self._initialized: 
             self._flight_listener.subscribe()
@@ -248,6 +258,7 @@ class PyDrone(object):
             self.update_status()
 
     def Interrupt(self, data):
+        """Déconnexion plus propre de l'automate"""
         self.my_log.warning("Interruption généralisée")
         self.my_log.warning("Remise à zéro de l'état de la caméra")
         self.CommonSetStandardCamera();
@@ -259,6 +270,7 @@ class PyDrone(object):
 
 
     def ShutDownFailOver(self):
+        """Arrêt du système de fail-over"""
         self.my_log.warning("Arrêt des processus de failover")
         self.ongoing = False
         
@@ -266,6 +278,9 @@ class PyDrone(object):
     #region Gestionnaire de commandes
    
     def SendCommand(self, command):
+        """Dispatch la commande envoyée. 
+            Le paramètre passé est soit un dict, soit un DroneCommand
+        """
         if not self._on_test and (not self._connected or not self._initialized) :
             return; 
 
@@ -319,6 +334,7 @@ class PyDrone(object):
         
 
     def error_queue_handler(self):
+        """Le fail-over en cas d'erreur d'une erreur de connexion au drone"""
         result_ok = False;
         while self.ongoing :
             result_ok = False;
@@ -363,6 +379,7 @@ class PyDrone(object):
 
     #region Comportement autonomes
     def AutomaticGoTo(self,coordinates):
+        """Déplacement automatique"""
         if isinstance(coordinates, dict):
             coordinates = DroneCommandParams(**coordinates)
 
@@ -380,6 +397,7 @@ class PyDrone(object):
             self.my_log.info("Mode Manuel : Commande ignorée")  
    
     def AutomaticCancelGoTo(self):
+        """Annulation du déplacement automatique"""
         if not self._manual_unit :
             if not self._on_test:
                 self._drone(CancelMoveTo()).wait()
@@ -391,6 +409,7 @@ class PyDrone(object):
             self.my_log.info("Mode Manuel : Commande ignorée")  
     
     def AutomaticSetCameraDown(self):
+        """On descend la caméra"""
         if not self._manual_unit :
             if not self._on_test:
             
@@ -411,6 +430,42 @@ class PyDrone(object):
             self._brain_client.emit('on_command_success', {"name":self.my_name})
         else : 
             self.my_log.info("Mode Manuel : Commande ignorée")  
+
+    def AutomaticTakeOff(self):
+        if not self._manual_unit :
+            if not self._on_test:
+                if (self._drone.get_state(FlyingStateChanged)["state"] is not FlyingStateChanged_State.hovering 
+                    and self._drone.get_state(FlyingStateChanged)["state"] is not FlyingStateChanged_State.flying):
+                    self._drone(TakeOff(_no_expect=True) & FlyingStateChanged(state="hovering", _policy="wait", _timeout=5) ).wait()
+            else :
+                self.my_log.info("Mode simulation: informations reçues ")
+            self._brain_client.emit('on_command_success', {"name":self.my_name})
+        else :
+            self.my_log.info("Mode manuel : commande ignorée ")
+
+
+    def AutomaticGoHome(self):
+        if not self._manual_unit :
+            if not self._on_test:
+                if self._drone.get_state(FlyingStateChanged)["state"] is FlyingStateChanged_State.hovering or self._drone.get_state(FlyingStateChanged)["state"] is FlyingStateChanged_State.flying:
+                    self._drone(NavigateHome(1)).wait()  
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+            self._brain_client.emit('on_command_success', {"name":self.my_name})
+        else :
+            self.my_log.info("Mode manuel : commande AutomaticGoHome ignorée ")
+
+    def AutomaticLanding(self):
+        if not self._manual_unit :
+            if not self._on_test:
+                if self._drone.get_state(FlyingStateChanged)["state"] is FlyingStateChanged_State.flying or self._drone.get_state(FlyingStateChanged)["state"] is FlyingStateChanged_State.hovering:
+                    self._drone(Landing(_timeout=5)).wait() 
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+            self._brain_client.emit('on_command_success', {"name":self.my_name})
+        else :
+            self.my_log.info("Mode manuel : commande AutomaticLanding ignorée ")
+
     #endregion Comportement autonomes
 
     #region Comportement autonomes / manuels
@@ -429,7 +484,6 @@ class PyDrone(object):
             self.camera_pitch = 0;
         else :
             self.my_log.info("Mode simulation: informations reçues")
-
 
     def CommonGoHome(self):
         if not self._on_test:
@@ -459,6 +513,52 @@ class PyDrone(object):
     #endregion Comportement autonomes
 
     #region Comportement  manuel
+    def ManualTakeOff(self):
+        if self._manual_unit :
+            if not self._on_test:
+                if (self._drone.get_state(FlyingStateChanged)["state"] is not FlyingStateChanged_State.hovering 
+                    and self._drone.get_state(FlyingStateChanged)["state"] is not FlyingStateChanged_State.flying):
+                    self._drone(TakeOff(_no_expect=True)).wait()
+                    self._brain_client.emit('on_manual_command', {"name":self.my_name, "command":self.ManualTakeOff.__name__})
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+        else :
+            self.my_log.info("Mode automatique : commande ManualTakeOff ignorée ")
+
+    def ManualGoHome(self):
+        if self._manual_unit :
+            if not self._on_test:
+                if self._drone.get_state(FlyingStateChanged)["state"] is not FlyingStateChanged_State.hovering :
+                    self._drone(NavigateHome(1)).wait() 
+                    self._brain_client.emit('on_manual_command', {"name":self.my_name, "command":self.ManualGoHome.__name__})
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+        else :
+            self.my_log.info("Mode automatique : commande ManualGoHome ignorée ")
+
+    def ManualCancelGoHome(self):
+        if self._manual_unit :
+            if not self._on_test:
+                if self._drone.get_state(FlyingStateChanged)["state"] is not FlyingStateChanged_State.hovering :
+                    self._drone(NavigateHome(0)).wait()
+                    self._brain_client.emit('on_manual_command', {"name":self.my_name, "command":self.ManualCancelGoHome.__name__})
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+        else :
+            self.my_log.info("Mode automatique : commande ManualGoHome ignorée ")
+
+    def ManualLanding(self):
+        if self._manual_unit :
+            if not self._on_test:
+                if self._drone.get_state(FlyingStateChanged)["state"] is FlyingStateChanged_State.flying or self._drone.get_state(FlyingStateChanged)["state"] is FlyingStateChanged_State.hovering:
+                    self._drone(Landing()).wait() 
+        
+                    self._brain_client.emit('on_manual_command', {"name":self.my_name, "command":self.ManualLanding.__name__})
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+        else :
+            self.my_log.info("Mode automatique : commande ManualLanding ignorée ")
+
     def ManualMove(self,params):
         if isinstance(params, dict):
             params = DroneCommandParams(**params)
@@ -635,22 +735,8 @@ class PyDrone(object):
         self.socket_initialized = False
         self.my_log.warning("Connexion au serveur de contrôle perdue")
     #endregion Web events
-
-    #region To Upgrade
-    #@deprecated(
-    #    version="1.0.0",
-    #    reason="Retrait de la logique OpenCV"
-    #)
-    def __init_opencv_frame_queue(self):
-        try :
-            self.my_log.info("Ouverture du flux pour {}".format(self._my_ip.split(".")))
-            self._ws_port = 7000 + int(self._my_ip.split(".")[2])
-  
-        except (Exception) as error: 
-           self.my_log.error("Status de la connectique : ERREUR, tentative de création de la file d'images")
-           self.my_log.error(error)
-
-
+    
+    #region Deprecated / To upgrade
     #@deprecated(
     #    version="1.0.0",
     #    reason="Intégration FFMPEG"
@@ -662,57 +748,4 @@ class PyDrone(object):
             self.my_log.error("Erreur lors de la liaison avec la caméra {}".format(self._my_ip))
             self._camera_initialized = False
             self.my_log.error(ex)
-
-    #@deprecated(
-    #    version="1.0.0",
-    #    reason="Ancien model de fonctionnement"
-    #)
-    def SendCommandOld(self, command):
-        if not self._on_test and (not self._connected or not self._initialized) :
-            return; 
-
-        name = "";#command.name;
-        params = None; #command.params
-
-        # Commandes envoyées directement par le programme Python
-        if isinstance(command, DroneCommand):
-            name = "{}{}".format(command.command_type.value,command.name.value);
-            params = command.params
-        # Commandes envoyées par WebSocket
-        elif isinstance(command, dict):
-            name = str(command["name"])
-            params = command["params"] if "params" in command.keys() else None
-        else :
-            self.my_log.error("Mauvaise informations envoyées, aucune interpretation de la commande")
-            return;
-
-        try :
-            target = getattr(self, name)
-            try :
-
-                self.my_log.info("Commande {} reçue, tentative de traitement".format(name, self._failure_count))
-                if params is not None:
-                    target(params);
-                else :
-                    target()
-                self._failure_count = 0
-            except(Exception) as error: 
-
-                self._failure_count += 1
-                self.my_log.warning("Commande {} non reçue, tentative #{}".format(name, self._failure_count))
-                self.my_log.warning("Détail de l'erreur")
-                self.my_log.warning(error)
-                
-                # On sanctionne tous les échecs
-                if self._failure_count >= self._max_retry :
-                    raise CommandAbordException()
-                time.sleep(1)
-
-                self.SendCommand(command);
-        except (CommandAbordException) :
-            self.my_log.error("{} échecs, abandon de la commande {}".format(self._failure_count, name))
-            self._failure_count = 0
-        except (Exception) as any_error: 
-            self.my_log.error("Commande {} non trouvée : {}".format(name, any_error))
-        
-    #endregion To Upgrade
+    #endregion Deprecated / To upgrade
