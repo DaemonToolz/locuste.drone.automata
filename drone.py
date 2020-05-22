@@ -392,7 +392,7 @@ class PyDrone(object):
             else :
                 self.my_log.info("Mode simulation: informations reçues {} ".format(coordinates.to_string()))
                 time.sleep(1)
-            self._brain_client.emit('on_command_success', {"name":self.my_name})
+            self._brain_client.emit('on_command_success', {"name":self.my_name, "command":"AutomaticGoTo"})
         else : 
             self.my_log.info("Mode Manuel : Commande ignorée")  
    
@@ -404,7 +404,7 @@ class PyDrone(object):
             else :
                 self.my_log.info("Mode simulation: informations reçues")
                 time.sleep(1)
-            self._brain_client.emit('on_command_success', {"name":self.my_name})
+            self._brain_client.emit('on_command_success', {"name":self.my_name, "command":"AutomaticCancelGoTo"})
         else : 
             self.my_log.info("Mode Manuel : Commande ignorée")  
     
@@ -427,7 +427,8 @@ class PyDrone(object):
                 
             else :
                 self.my_log.info("Mode simulation: informations reçues")
-            self._brain_client.emit('on_command_success', {"name":self.my_name})
+                time.sleep(1)
+            self._brain_client.emit('on_command_success', {"name":self.my_name, "command":"AutomaticSetCameraDown"})
         else : 
             self.my_log.info("Mode Manuel : Commande ignorée")  
 
@@ -439,7 +440,8 @@ class PyDrone(object):
                     self._drone(TakeOff(_no_expect=True) & FlyingStateChanged(state="hovering", _policy="wait", _timeout=5) ).wait()
             else :
                 self.my_log.info("Mode simulation: informations reçues ")
-            self._brain_client.emit('on_command_success', {"name":self.my_name})
+                time.sleep(1)
+            self._brain_client.emit('on_command_success', {"name":self.my_name, "command":"AutomaticTakeOff"})
         else :
             self.my_log.info("Mode manuel : commande ignorée ")
 
@@ -451,7 +453,8 @@ class PyDrone(object):
                     self._drone(NavigateHome(1)).wait()  
             else :
                 self.my_log.info("Mode simulation: informations reçues")
-            self._brain_client.emit('on_command_success', {"name":self.my_name})
+                time.sleep(5)
+            self._brain_client.emit('on_command_success', {"name":self.my_name, "command":"AutomaticGoHome"})
         else :
             self.my_log.info("Mode manuel : commande AutomaticGoHome ignorée ")
 
@@ -462,7 +465,8 @@ class PyDrone(object):
                     self._drone(Landing(_timeout=5)).wait() 
             else :
                 self.my_log.info("Mode simulation: informations reçues")
-            self._brain_client.emit('on_command_success', {"name":self.my_name})
+                time.sleep(1)
+            self._brain_client.emit('on_command_success', {"name":self.my_name, "command":"AutomaticLanding"})
         else :
             self.my_log.info("Mode manuel : commande AutomaticLanding ignorée ")
 
