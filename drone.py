@@ -177,6 +177,7 @@ class PyDrone(object):
         """Etape 3 : Initialisation des Web Sockets"""
         try :
             # TODO : Scinder en 2 sockets distinctes : 1 pour le contrôle et 1 pour la remontée d'informations
+            # _brain_client => _control_socket + _event_socket 
             self._brain_client = socketio.Client() 
            
             self._brain_client.on('connect', self.connect)
