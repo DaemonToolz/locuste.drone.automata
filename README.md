@@ -4,9 +4,9 @@ Requiert une version installée de PARROT OLYMPE avec les commandes suivantes :
 source PATH/parrot-groundsdk/products/olympe/linux/env/shell
 export LD_PRELOAD=/usr/lib/arm-linux-gnueabihf/libatomic.so.1 (Si ARM)
 
+<img width="2629" alt="locuste-automaton-banner" src="https://user-images.githubusercontent.com/6602774/84285958-5c1dcb80-ab3e-11ea-8e54-eed0532851b5.png">
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/28b77886b9ad485d8c3b261a48dc2af3)](https://www.codacy.com/manual/axel.maciejewski/locuste.drone.automata?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DaemonToolz/locuste.drone.automata&amp;utm_campaign=Badge_Grade)
-
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=alert_status)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=DaemonToolz_locuste.drone.automata&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=DaemonToolz_locuste.drone.automata)
