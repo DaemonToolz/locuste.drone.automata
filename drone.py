@@ -518,6 +518,9 @@ class PyDrone(object):
     #endregion Comportement autonomes
 
     #region Comportement  manuel
+     def ManualTilt(self):
+        self.my_log.info("Commande ignorée")
+
     def ManualTakeOff(self):
         if self._manual_unit :
             if not self._on_test:
