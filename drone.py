@@ -58,6 +58,11 @@ from listeners.flightListener import FlightListener
 #endregion automaton
 
 
+#region zmq
+import zmq
+
+#endregion zmq
+
 #192.168.42.1
 class PyDrone(object):
     #region Gestionnaire de drone
@@ -73,6 +78,7 @@ class PyDrone(object):
         self.my_name = "ANAFI_{}".format(self._my_ip)
         drone_global_commands[self._my_ip] = { 
             "error_queue": queue.Queue(),
+            "main_queue": queue.Queue(),
             "on_error": False,
             "ongoing": True,
             "successful_attempts": 0,
@@ -80,9 +86,14 @@ class PyDrone(object):
         }
 
         threading._start_new_thread( self.error_queue_handler, ())
+        
 
         self._drone_min_height = min_height;
         self._ws_port = 7000 + int(self._my_ip.split(".")[2])
+        self._zmq_port = 7300  + int(self._my_ip.split(".")[2])
+        threading._start_new_thread( self.zmq_queue_handler, ())
+        threading._start_new_thread( self.main_queue_handler, ())
+        
         self._relay = DroneHomeRelay() 
 
         self._drone_coordinates = DroneCoordinates()
@@ -287,7 +298,6 @@ class PyDrone(object):
 
         name = "";#command.name;
         params = None; #command.params
-
         # Commandes envoyées directement par le programme Python
         if isinstance(command, DroneCommand):
             name = "{}{}".format(command.command_type.value,command.name.value);
@@ -299,7 +309,6 @@ class PyDrone(object):
         else :
             self.my_log.error("Mauvaise informations envoyées, aucune interpretation de la commande")
             return;
-
         try :
             target = getattr(self, name)
             try :
@@ -333,6 +342,36 @@ class PyDrone(object):
         except (Exception) as any_error: 
             self.my_log.error("Commande {} non trouvée : {}".format(name, any_error))
         
+    def zmq_queue_handler(self):
+        """Système de réception de l'ordre - FIFO ZMQ"""
+
+        while self.ongoing :
+            try :
+                context = zmq.Context()
+                socket = context.socket(zmq.ROUTER)
+                socket.bind("tcp://*:{}".format(self._zmq_port))
+                while self.ongoing :
+                    try :
+                        self.main_queue.put({"payload": socket.recv_json(flags=zmq.NOBLOCK)})
+                    except: 
+                        time.sleep(0.005)
+            except :
+                time.sleep(1)
+        
+        self.update_status()
+
+    def main_queue_handler(self):
+        """Thread de réception principal"""
+
+        while self.ongoing :
+            try :
+                if not self.main_queue.empty():
+                    self.SendCommand(self.main_queue.get()["payload"])
+                time.sleep(0.01)
+            except :
+                time.sleep(1)
+        
+        self.update_status()
 
     def error_queue_handler(self):
         """Le fail-over en cas d'erreur d'une erreur de connexion au drone"""
@@ -518,7 +557,7 @@ class PyDrone(object):
     #endregion Comportement autonomes
 
     #region Comportement  manuel
-     def ManualTilt(self):
+    def ManualTilt(self):
         self.my_log.info("Commande ignorée")
 
     def ManualTakeOff(self):
@@ -680,6 +719,12 @@ class PyDrone(object):
         global drone_global_commands
         return drone_global_commands[self._my_ip]["error_queue"]
 
+        
+    @property
+    def main_queue(self): 
+        global drone_global_commands
+        return drone_global_commands[self._my_ip]["main_queue"]
+
     
     @property
     def ongoing(self): 
@@ -733,7 +778,7 @@ class PyDrone(object):
         self.socket_initialized = True
         if self._connected and self._initialized:
             my_position = self._drone.get_state(PositionChanged)
-        self._brain_client.emit('identify', {"name":self.my_name, "video_port":self._ws_port, "ip":self._my_ip ,"connected": self._connected, "manual": self._manual_unit, "sim":self._on_test, "position":my_position})
+        self._brain_client.emit('identify', {"name":self.my_name, "zmq_port":self._zmq_port, "video_port":self._ws_port, "ip":self._my_ip ,"connected": self._connected, "manual": self._manual_unit, "sim":self._on_test, "position":my_position})
     
     def connect_error(self):
         self.socket_initialized = False
