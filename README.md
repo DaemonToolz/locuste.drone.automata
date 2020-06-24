@@ -32,7 +32,7 @@ Tout le système est embarqué sur une carte Raspberry PI 4B+, Raspbian BUSTER.
 * Python 3.7
 * Dépendance forte avec la SDK OLYMPE PARROT : (https://developer.parrot.com/docs/olympe/, https://github.com/Parrot-Developers/olympe)
 
-![Vue globale](https://user-images.githubusercontent.com/6602774/83644783-f10a4d00-a5b1-11ea-8fed-80c3b76f1b00.png)
+![Vue globale](https://user-images.githubusercontent.com/6602774/85581723-20562c00-b63d-11ea-8e0c-372c04aef6cd.png)
 
 Détail des choix techniques pour la partie Automate :
 
