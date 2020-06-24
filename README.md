@@ -38,6 +38,7 @@ Détail des choix techniques pour la partie Automate :
 
 * [Python] - Imposé par la SDK OLYMPE PARROT
 * [SocketIO] - Elément facile intégré avec Angular, Node et Python
+* [ZMQ] - Système de messaging simple et rapide (communications via Sockets en C)
 
 Evolutions à venir : 
 * Refactoring global
