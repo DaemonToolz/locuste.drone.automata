@@ -17,7 +17,7 @@ import olympe
 from reapeated_timer import RepeatedTimer
 from olympe.enums.ardrone3.Piloting import MoveTo_Orientation_mode
 from olympe.enums.ardrone3.PilotingState import FlyingStateChanged_State
-from olympe.messages.ardrone3.Piloting import TakeOff, Landing, moveTo, NavigateHome,CancelMoveTo, moveBy
+from olympe.messages.ardrone3.Piloting import TakeOff, Landing, moveTo, NavigateHome,CancelMoveTo, moveBy, PCMD
 
 from olympe.messages.common.CommonState import BatteryStateChanged
 
@@ -60,7 +60,7 @@ from listeners.flightListener import FlightListener
 
 #region zmq
 import zmq
-
+import datetime
 #endregion zmq
 
 #192.168.42.1
@@ -116,6 +116,7 @@ class PyDrone(object):
         self._manual_unit = False
         self._connected = False
         self._initialized = False
+        self._joystick_ctrl = False;
         self._failure_count = 0
         self._max_retry = 5
 
@@ -195,6 +196,8 @@ class PyDrone(object):
             self._brain_client.on('connect_error', self.connect_error)
             self._brain_client.on('disconnect', self.disconnect)
             self._brain_client.on('request_manual', self.RequestManualFlight)
+            self._brain_client.on('request_mobile', self.RequestMobileControl)
+            self._brain_client.on('request_standard', self.RequestStandardControl);
             self._brain_client.on('request_automatic', self.RequestAutomaticFlight)
             self._brain_client.on('request_emergency_disconnect', self.RequestEmergencyDisconnect)
             self._brain_client.on('request_emergency_reconnect', self.RequestEmergencyReconnect)
@@ -236,6 +239,19 @@ class PyDrone(object):
         self._manual_unit = True;
         self.my_log.warning("Passage en mode vol Manuel")
         self.update_status()
+    
+            
+    def RequestMobileControl(self, data):
+        """Passage en mode manuel"""
+        self._joystick_ctrl = True;
+        self.my_log.warning("Passage en mode MOBILE")
+        self.update_status()
+
+    def RequestStandardControl(self, data):
+        """Passage en mode manuel"""
+        self._joystick_ctrl = False;
+        self.my_log.warning("Passage en mode STANDARD")
+        self.update_status()
         
     def OnNewOperator(self, data):
         """Enregistrement d'un nouvel opérateur"""
@@ -276,6 +292,7 @@ class PyDrone(object):
         self.CommonSetStandardCamera();
         self.my_log.warning("Passage en mode manuel du drone")
         self.RequestManualFlight(data);
+        self.RequestStandardControl(data);
         self.my_log.warning("Déconnexion du drone")
         self.RequestEmergencyDisconnect(data);
         self.update_status()
@@ -341,7 +358,7 @@ class PyDrone(object):
             self._on_error = True
         except (Exception) as any_error: 
             self.my_log.error("Commande {} non trouvée : {}".format(name, any_error))
-        
+
     def zmq_queue_handler(self):
         """Système de réception de l'ordre - FIFO ZMQ"""
 
@@ -349,10 +366,12 @@ class PyDrone(object):
             try :
                 context = zmq.Context()
                 socket = context.socket(zmq.ROUTER)
-                socket.bind("tcp://*:{}".format(self._zmq_port))
+                socket.bind("tcp://127.0.0.1:{}".format(self._zmq_port))
                 while self.ongoing :
                     try :
-                        self.main_queue.put({"payload": socket.recv_json(flags=zmq.NOBLOCK)})
+                        data = socket.recv_json(flags=zmq.NOBLOCK)
+                        self.main_queue.put({"payload": data})
+
                     except: 
                         time.sleep(0.005)
             except :
@@ -367,7 +386,8 @@ class PyDrone(object):
             try :
                 if not self.main_queue.empty():
                     self.SendCommand(self.main_queue.get()["payload"])
-                time.sleep(0.01)
+                else :
+                    time.sleep(0.01)
             except :
                 time.sleep(1)
         
@@ -557,8 +577,7 @@ class PyDrone(object):
     #endregion Comportement autonomes
 
     #region Comportement  manuel
-    def ManualTilt(self):
-        self.my_log.info("Commande ignorée")
+   
 
     def ManualTakeOff(self):
         if self._manual_unit :
@@ -607,6 +626,10 @@ class PyDrone(object):
             self.my_log.info("Mode automatique : commande ManualLanding ignorée ")
 
     def ManualMove(self,params):
+        if self._joystick_ctrl :
+            self.my_log.info("Mode mobile : commande {} ignorée ".format(params.to_string()))
+            return;
+
         if isinstance(params, dict):
             params = DroneCommandParams(**params)
         if self._manual_unit :
@@ -617,6 +640,22 @@ class PyDrone(object):
         else :
             self.my_log.info("Mode automatique : commande {} ignorée ".format(params.to_string()))
 
+    #https://gist.github.com/ndessart/ec595102b4bd9df390900deeae90c83c
+    def ManualTilt(self, params):
+        if not self._joystick_ctrl :
+            self.my_log.info("Mode DESKTOP : commande ignorée ")
+            return;
+
+        if isinstance(params, dict):
+            params = DroneCommandParams(**params)
+
+        if self._manual_unit :
+            if not self._on_test:
+                self._drone(PCMD(params.flag,params.roll,params.pitch,params.yaw,params.gaz, timestampAndSeqNum=0))
+            else :
+                self.my_log.info("Mode simulation: informations reçues")
+        else :
+            self.my_log.info("Mode automatique : commande ManualTilt ignorée ")
 
     def ManualTiltCamera(self,params):
         if isinstance(params, dict):
@@ -691,7 +730,8 @@ class PyDrone(object):
             "connected": self._connected,
             "initialized": self._initialized,
             "sim": self._on_test,
-            "manual": self._manual_unit
+            "manual": self._manual_unit,
+            "mobile": self._joystick_ctrl
         }
         with open('/home/pi/project/locuste/data/{}.json'.format(self.my_name), 'w') as f:
             json.dump(updated_data, f)
