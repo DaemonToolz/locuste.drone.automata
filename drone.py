@@ -311,6 +311,7 @@ class PyDrone(object):
             Le paramètre passé est soit un dict, soit un DroneCommand
         """
         if not self._on_test and (not self._connected or not self._initialized) :
+            self.my_log.info("Commande reçue mais non traitée ")
             return; 
 
         name = "";#command.name;
@@ -350,7 +351,7 @@ class PyDrone(object):
                 # On sanctionne tous les échecs
                 if self._failure_count >= self._max_retry :
                     raise CommandAbordException()
-                time.sleep(1)
+                time.sleep(0.05)
                 self.SendCommand(command);
         except (CommandAbordException) :
             self.my_log.error("{} échecs, abandon et transfert de la commande {}".format(self._failure_count, name))
@@ -366,7 +367,7 @@ class PyDrone(object):
             try :
                 context = zmq.Context()
                 socket = context.socket(zmq.ROUTER)
-                socket.bind("tcp://127.0.0.1:{}".format(self._zmq_port))
+                socket.bind("tcp://127.0.0.1:{}".format(self._zmq_port)) # A tester avec IPC 
                 while self.ongoing :
                     try :
                         data = socket.recv_json(flags=zmq.NOBLOCK)
@@ -642,16 +643,16 @@ class PyDrone(object):
 
     #https://gist.github.com/ndessart/ec595102b4bd9df390900deeae90c83c
     def ManualTilt(self, params):
-        if not self._joystick_ctrl :
-            self.my_log.info("Mode DESKTOP : commande ignorée ")
-            return;
+        #if not self._joystick_ctrl :
+        #    self.my_log.info("Mode DESKTOP : commande ignorée ")
+        #    return;
 
         if isinstance(params, dict):
             params = DroneCommandParams(**params)
 
         if self._manual_unit :
             if not self._on_test:
-                self._drone(PCMD(params.flag,params.roll,params.pitch,params.yaw,params.gaz, timestampAndSeqNum=0))
+                self._drone(PCMD(params.flag,params.roll,params.pitch,params.yaw,params.throttle, timestampAndSeqNum=0))
             else :
                 self.my_log.info("Mode simulation: informations reçues")
         else :
