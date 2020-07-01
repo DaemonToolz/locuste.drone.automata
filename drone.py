@@ -73,6 +73,7 @@ class PyDrone(object):
 
         log.log.init_logs_for(ip_adress)
         self.__init_variables()
+        self.__initSyncCmdDict()
         
         self._my_ip = ip_adress
         self.my_name = "ANAFI_{}".format(self._my_ip)
@@ -86,7 +87,6 @@ class PyDrone(object):
         }
 
         threading._start_new_thread( self.error_queue_handler, ())
-        
 
         self._drone_min_height = min_height;
         self._ws_port = 7000 + int(self._my_ip.split(".")[2])
@@ -106,6 +106,21 @@ class PyDrone(object):
         
         if not self._initialized : 
             self._retry_init = RepeatedTimer(1, self.__initialize)
+
+    def __initSyncCmdDict(self):
+        self._special_commands = {
+            'request_manual': self.RequestManualFlight,
+            'request_mobile': self.RequestMobileControl,
+            'request_standard': self.RequestStandardControl,
+            'request_automatic': self.RequestAutomaticFlight,
+            'request_emergency_disconnect': self.RequestEmergencyDisconnect,
+            'request_emergency_reconnect': self.RequestEmergencyReconnect,
+            'request_simulation': self.EnterTestingMode,
+            'request_normal': self.LeaveTestingMode,
+            'identify_operator': self.OnNewOperator,
+            'interrupt': self.Interrupt
+        }
+
 
     def __init_variables(self): 
         """Initialisation d'une partie des variables d'instance"""
@@ -195,21 +210,7 @@ class PyDrone(object):
             self._brain_client.on('connect', self.connect)
             self._brain_client.on('connect_error', self.connect_error)
             self._brain_client.on('disconnect', self.disconnect)
-            self._brain_client.on('request_manual', self.RequestManualFlight)
-            self._brain_client.on('request_mobile', self.RequestMobileControl)
-            self._brain_client.on('request_standard', self.RequestStandardControl);
-            self._brain_client.on('request_automatic', self.RequestAutomaticFlight)
-            self._brain_client.on('request_emergency_disconnect', self.RequestEmergencyDisconnect)
-            self._brain_client.on('request_emergency_reconnect', self.RequestEmergencyReconnect)
-
-            self._brain_client.on('request_simulation', self.EnterTestingMode)
-            self._brain_client.on('request_normal', self.LeaveTestingMode)
-
-            self._brain_client.on('identify_operator', self.OnNewOperator)
-            self._brain_client.on('interrupt', self.Interrupt)
-            
-            self._brain_client.on('command', self.SendCommand)
-            
+           
             self._brain_client.connect('ws://localhost:21000',transports=["websocket"] )
 
             if hasattr(self, "_flight_listener"):
@@ -362,7 +363,6 @@ class PyDrone(object):
 
     def zmq_queue_handler(self):
         """Système de réception de l'ordre - FIFO ZMQ"""
-
         while self.ongoing :
             try :
                 context = zmq.Context()
@@ -371,8 +371,7 @@ class PyDrone(object):
                 while self.ongoing :
                     try :
                         data = socket.recv_json(flags=zmq.NOBLOCK)
-                        self.main_queue.put({"payload": data})
-
+                        self.main_queue.put({"payload": data}) # On met en queue pour un appel ultérieur
                     except: 
                         time.sleep(0.005)
             except :
@@ -382,11 +381,15 @@ class PyDrone(object):
 
     def main_queue_handler(self):
         """Thread de réception principal"""
-
+        # Logique associée : Trial & error (Performances +++)
         while self.ongoing :
             try :
                 if not self.main_queue.empty():
-                    self.SendCommand(self.main_queue.get()["payload"])
+                    payload = self.main_queue.get()["payload"]
+                    if "target" in payload and "command" in payload:
+                        self._special_commands[payload["command"]](payload["target"])  # On teste la commande automatique
+                    else :
+                        self.SendCommand(payload) # Si ça plante, on passe au dispatcher manuel
                 else :
                     time.sleep(0.01)
             except :
@@ -405,15 +408,15 @@ class PyDrone(object):
                 continue;
             try :
                 call = self.error_queue.get()
-                funcion = call["function"]
+                function = call["function"]
                 params = call["params"] if "params" in call.keys() else None
                 
                 while not result_ok :
                     try : 
                         if params is not None:
-                            funcion(params);
+                            function(params);
                         else :
-                            funcion()
+                            function()
                         self._failure_count = 0
                         result_ok = True;
                         self.successful_attempts = self.successful_attempts+1
